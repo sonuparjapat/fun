@@ -1,13 +1,22 @@
 'use client'
+export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
+
+type Floater = {
+  left: string
+  top: string
+  delay: string
+  icon: string
+}
 
 export default function ValentinePage() {
   const [showCelebration, setShowCelebration] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [noStyle, setNoStyle] = useState<any>({})
   const [isSmallScreen, setIsSmallScreen] = useState(false)
+  const [floaters, setFloaters] = useState<Floater[]>([])
 
   const containerRef = useRef<HTMLDivElement>(null)
   const noButtonRef = useRef<HTMLButtonElement>(null)
@@ -15,6 +24,7 @@ export default function ValentinePage() {
   const searchParams = useSearchParams()
   const name = searchParams.get('name') || 'My Love'
 
+  /* ---------- MOUNT + SCREEN CHECK ---------- */
   useEffect(() => {
     setMounted(true)
 
@@ -28,7 +38,20 @@ export default function ValentinePage() {
     return () => window.removeEventListener('resize', checkScreen)
   }, [])
 
-  /* ---------- INITIAL POSITION ---------- */
+  /* ---------- FLOATING EMOJIS (SAFE) ---------- */
+  useEffect(() => {
+    const icons = ['💖', '💕', '✨', '🌸', '💝']
+    setFloaters(
+      Array.from({ length: 18 }).map((_, i) => ({
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: `${i * 0.4}s`,
+        icon: icons[i % icons.length],
+      }))
+    )
+  }, [])
+
+  /* ---------- INITIAL NO BUTTON POSITION ---------- */
   useEffect(() => {
     if (!containerRef.current || !noButtonRef.current) return
 
@@ -81,15 +104,12 @@ export default function ValentinePage() {
     if (!noButtonRef.current) return
 
     const b = noButtonRef.current.getBoundingClientRect()
-
     const distance = Math.hypot(
       e.clientX - (b.left + b.width / 2),
       e.clientY - (b.top + b.height / 2)
     )
 
-    if (distance < 70) {
-      instantEscape()
-    }
+    if (distance < 70) instantEscape()
   }
 
   if (!mounted) return null
@@ -98,19 +118,19 @@ export default function ValentinePage() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-pink-50 flex flex-col items-center justify-center p-4 overflow-hidden">
 
-      {/* FLOATING EMOJIS (MAIN SCREEN) */}
+      {/* FLOATING EMOJIS */}
       <div className="absolute inset-0 pointer-events-none">
-        {Array.from({ length: 18 }).map((_, i) => (
+        {floaters.map((f, i) => (
           <span
             key={i}
             className="absolute text-xl sm:text-2xl opacity-25 animate-float"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${i * 0.4}s`,
+              left: f.left,
+              top: f.top,
+              animationDelay: f.delay,
             }}
           >
-            {['💖', '💕', '✨', '🌸', '💝'][i % 5]}
+            {f.icon}
           </span>
         ))}
       </div>
@@ -118,17 +138,12 @@ export default function ValentinePage() {
       <div className="relative text-center space-y-8 w-full max-w-3xl">
 
         {/* TITLE */}
-        <h1
-          className="
-            text-3xl
-            sm:text-4xl
-            md:text-5xl
-            lg:text-6xl
-            font-bold
-            bg-gradient-to-r from-rose-400 via-pink-500 to-rose-400
-            bg-clip-text text-transparent
-          "
-        >
+        <h1 className="
+          text-3xl sm:text-4xl md:text-5xl lg:text-6xl
+          font-bold
+          bg-gradient-to-r from-rose-400 via-pink-500 to-rose-400
+          bg-clip-text text-transparent
+        ">
           Will you be my Valentine, {name}?
         </h1>
 
@@ -138,13 +153,12 @@ export default function ValentinePage() {
           onPointerMove={handlePointerMove}
           className="relative h-56 sm:h-64 w-full flex items-center justify-center"
         >
-          {/* YES BUTTON */}
+          {/* YES */}
           <button
             onClick={() => setShowCelebration(true)}
             className={`
               absolute
-              px-6 py-3
-              sm:px-8 sm:py-4
+              px-6 py-3 sm:px-8 sm:py-4
               text-base sm:text-lg md:text-xl
               font-semibold
               rounded-xl
@@ -160,16 +174,12 @@ export default function ValentinePage() {
             💚 Yes!
           </button>
 
-          {/* NO BUTTON */}
+          {/* NO */}
           <button
             ref={noButtonRef}
-            style={{
-              ...noStyle,
-              pointerEvents: 'none',
-            }}
+            style={{ ...noStyle, pointerEvents: 'none' }}
             className="
-              px-6 py-3
-              sm:px-8 sm:py-4
+              px-6 py-3 sm:px-8 sm:py-4
               text-base sm:text-lg md:text-xl
               font-semibold
               rounded-xl
@@ -186,71 +196,56 @@ export default function ValentinePage() {
       {/* COPYRIGHT */}
       <footer className="mt-12 text-xs sm:text-sm text-pink-400 opacity-80 text-center relative z-10">
         © {new Date().getFullYear()} — Built with ❤️ by{' '}
-        <span className="font-medium">
-          sonuparjapat.connect@gmail.com
-        </span>
+        <span className="font-medium">sonuparjapat.connect@gmail.com</span>
       </footer>
-
-      {/* FLOAT ANIMATION */}
-      {/* <style jsx global>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-      `}</style> */}
     </div>
   )
 }
 
-/* ---------- CELEBRATION ---------- */
+/* ---------- CELEBRATION SCREEN ---------- */
 
 function CelebrationScreen({ name }: { name: string }) {
+  const [floaters, setFloaters] = useState<Floater[]>([])
+
+  useEffect(() => {
+    const icons = ['💖', '💕', '✨', '🌸', '💝']
+    setFloaters(
+      Array.from({ length: 22 }).map((_, i) => ({
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: `${i * 0.3}s`,
+        icon: icons[i % icons.length],
+      }))
+    )
+  }, [])
+
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 via-rose-100 to-pink-200 overflow-hidden px-4">
 
-      {/* FLOATING EMOJIS (CELEBRATION) */}
+      {/* FLOATING EMOJIS */}
       <div className="absolute inset-0 pointer-events-none">
-        {Array.from({ length: 22 }).map((_, i) => (
+        {floaters.map((f, i) => (
           <span
             key={i}
             className="absolute text-2xl sm:text-3xl opacity-30 animate-float"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${i * 0.3}s`,
+              left: f.left,
+              top: f.top,
+              animationDelay: f.delay,
             }}
           >
-            {['💖', '💕', '✨', '🌸', '💝'][i % 5]}
+            {f.icon}
           </span>
         ))}
       </div>
 
       <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl px-8 py-10 sm:px-12 sm:py-14 text-center space-y-5 max-w-xl w-full">
 
-        <h1
-          className="
-            text-4xl
-            sm:text-5xl
-            md:text-6xl
-            font-bold
-            text-pink-600
-          "
-        >
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-pink-600">
           YAY! 💖
         </h1>
 
-        <p
-          className="
-            text-xl
-            sm:text-2xl
-            md:text-3xl
-            font-semibold
-            text-rose-600
-          "
-        >
+        <p className="text-xl sm:text-2xl md:text-3xl font-semibold text-rose-600">
           I’m so happy, {name}! 🥰
         </p>
 
