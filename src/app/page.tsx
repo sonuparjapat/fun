@@ -20,9 +20,13 @@ export default function ValentinePage() {
 
   const containerRef = useRef<HTMLDivElement>(null)
   const noButtonRef = useRef<HTMLButtonElement>(null)
+const [name, setName] = useState('My Love')
 
-  const searchParams = useSearchParams()
-  const name = searchParams.get('name') || 'My Love'
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search)
+  const n = params.get('name')
+  if (n) setName(n)
+}, [])
 
   /* ---------- MOUNT + SCREEN CHECK ---------- */
   useEffect(() => {
